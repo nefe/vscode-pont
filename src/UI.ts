@@ -438,11 +438,13 @@ export class Control {
         : "npm i -D pont-engine@" + currVersion;
 
       if (!hasProjectVersion) {
+        console.log(cmd);
         child_process.execSync(cmd);
       } else {
         const projectVersion = require(projectVersionPath).version;
 
         if (projectVersion !== currVersion) {
+          console.log(cmd);
           child_process.execSync(cmd);
         }
       }
