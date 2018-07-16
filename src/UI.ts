@@ -6,6 +6,7 @@ import { wait, showProgress } from "./utils";
 import * as events from "events";
 import * as child_process from "child_process";
 import * as fs from "fs";
+import { worker } from "cluster";
 
 export class UI {
   private control: Control;
@@ -439,17 +440,21 @@ export class Control {
 
       if (!hasProjectVersion) {
         console.log(cmd);
-        child_process.execSync(cmd);
+        child_process.execSync(cmd, {
+          cwd: vscode.workspace.rootPath
+        });
       } else {
         const projectVersion = require(projectVersionPath).version;
 
         if (projectVersion !== currVersion) {
           console.log(cmd);
-          child_process.execSync(cmd);
+          child_process.execSync(cmd, {
+            cwd: vscode.workspace.rootPath
+          });
         }
       }
     } catch (e) {
-      vscode.window.showErrorMessage(e);
+      vscode.window.showErrorMessage("npm 同步错误" + e.toString());
     }
   }
 }
