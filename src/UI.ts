@@ -104,7 +104,11 @@ export class Control {
     instance.ui.reRender();
 
     showProgress("ready", instance.manager, async () => {
-      await instance.manager.ready();
+      try {
+        await instance.manager.ready();
+      } catch (e) {
+        vscode.window.showErrorMessage(e.toString());
+      }
       instance.manager.calDiffs();
 
       instance.ui.reRender();
