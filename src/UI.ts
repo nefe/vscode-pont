@@ -58,9 +58,9 @@ export class UI {
     if (this.control.isMultiple) {
       const currConfig = this.control.manager.currConfig;
 
-      this.allBar.text = `origin(${currConfig.name})`;
-      this.allBar.color = "yellow";
-      this.allBar.show();
+      this.originBar.text = `origin(${currConfig.name})`;
+      this.originBar.color = "yellow";
+      this.originBar.show();
     }
 
     this.syncBar.text = "sync";
