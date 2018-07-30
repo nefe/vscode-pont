@@ -4,9 +4,7 @@ import * as _ from "lodash";
 import * as path from "path";
 import { wait, showProgress } from "./utils";
 import * as events from "events";
-import * as child_process from "child_process";
-import * as fs from "fs";
-import { worker } from "cluster";
+import { syncNpm } from './utils';
 
 export class UI {
   private control: Control;
@@ -410,7 +408,6 @@ export class Control {
 
   async regenerate() {
     const e = new events.EventEmitter();
-    await this.syncNpm();
 
     showProgress("生成代码", this.manager, async report => {
       report("代码生成中...");
@@ -424,41 +421,6 @@ export class Control {
   }
 
   async syncNpm() {
-    try {
-      const currVersion = require(path.join(
-        __dirname,
-        "../node_modules/pont-engine/package.json"
-      )).version;
-      const projectVersionPath = path.join(
-        vscode.workspace.rootPath,
-        "node_modules/pont-engine/package.json"
-      );
-      const yarnPath = path.join(vscode.workspace.rootPath, "yarn.lock");
-
-      const hasProjectVersion = fs.existsSync(projectVersionPath);
-      const useYarn = fs.existsSync(yarnPath);
-
-      const cmd = useYarn
-        ? "yarn add -D pont-engine@" + currVersion
-        : "npm i -D pont-engine@" + currVersion;
-
-      if (!hasProjectVersion) {
-        console.log(cmd);
-        child_process.execSync(cmd, {
-          cwd: vscode.workspace.rootPath
-        });
-      } else {
-        const projectVersion = require(projectVersionPath).version;
-
-        if (projectVersion !== currVersion) {
-          console.log(cmd);
-          child_process.execSync(cmd, {
-            cwd: vscode.workspace.rootPath
-          });
-        }
-      }
-    } catch (e) {
-      vscode.window.showErrorMessage("npm 同步错误" + e.toString());
-    }
+    await syncNpm();
   }
 }

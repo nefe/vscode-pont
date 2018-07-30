@@ -5,9 +5,11 @@ import * as vscode from "vscode";
 import { Manager, Config, lookForFiles } from "pont-engine";
 import * as path from "path";
 import { Control } from "./UI";
+import { syncNpm } from "./utils";
 
 export async function createManager(configPath: string) {
   try {
+    await syncNpm();
     const config = Config.createFromConfigPath(configPath);
     const errMsg = config.validate();
 
