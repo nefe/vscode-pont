@@ -241,9 +241,13 @@ export class Control {
             this.manager.setReport(info => {
               p.report({ message: info });
             });
+            try {
             await this.manager.selectDataSource(item.label);
             this.manager.calDiffs();
             this.ui.reRender();
+            } catch (e) {
+              vscode.window.showErrorMessage(e.message);
+            }
           }
         );
       },
