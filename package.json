@@ -2,7 +2,7 @@
   "name": "vscode-pont",
   "displayName": "pont",
   "description": "",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "publisher": "jasonHzq",
   "engines": {
     "vscode": "^1.24.0"
@@ -37,7 +37,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "yarn && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
@@ -51,7 +51,7 @@
     "vscode": "^1.1.18"
   },
   "dependencies": {
-    "pont-engine": "^0.1.19"
+    "pont-engine": "^0.1.20"
   },
   "repository": {
     "url": "git@github.com:nefe/vscode-pont.git",
