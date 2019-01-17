@@ -2,7 +2,7 @@
   "name": "vscode-pont",
   "displayName": "pont",
   "description": "",
-  "version": "0.1.35",
+  "version": "0.1.37",
   "publisher": "jasonHzq",
   "engines": {
     "vscode": "^1.24.0"
@@ -51,7 +51,7 @@
     "vscode": "^1.1.18"
   },
   "dependencies": {
-    "pont-engine": "0.1.34"
+    "pont-engine": "0.1.36"
   },
   "repository": {
     "url": "git@github.com:nefe/vscode-pont.git",
