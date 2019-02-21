@@ -51,7 +51,7 @@
     "vscode": "^1.1.18"
   },
   "dependencies": {
-    "pont-engine": "0.1.46"
+    "pont-engine": "0.1.47"
   },
   "repository": {
     "url": "git@github.com:nefe/vscode-pont.git",
