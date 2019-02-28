@@ -1,9 +1,9 @@
-import { Manager } from "pont-engine";
-import * as vscode from "vscode";
-import * as _ from "lodash";
-import * as path from "path";
-import { wait, showProgress } from "./utils";
-import * as events from "events";
+import { Manager } from 'pont-engine';
+import * as vscode from 'vscode';
+import * as _ from 'lodash';
+import * as path from 'path';
+import { wait, showProgress } from './utils';
+import * as events from 'events';
 import { syncNpm } from './utils';
 
 export class UI {
@@ -20,12 +20,10 @@ export class UI {
   geBar: vscode.StatusBarItem;
 
   constructor(control: Control) {
-    if (control.isMultiple) {
-      this.originBar = vscode.window.createStatusBarItem(
-        vscode.StatusBarAlignment.Left
-      );
-      this.originBar.command = control.commands.switchOrigin;
-    }
+    this.originBar = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Left
+    );
+    this.originBar.command = control.commands.switchOrigin;
 
     this.syncBar = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left
@@ -57,36 +55,36 @@ export class UI {
       const currConfig = this.control.manager.currConfig;
 
       this.originBar.text = `origin(${currConfig.name})`;
-      this.originBar.color = "yellow";
+      this.originBar.color = 'yellow';
       this.originBar.show();
     }
 
-    this.syncBar.text = "sync";
-    this.syncBar.color = "yellow";
-    this.syncBar.tooltip = "远程数据源同步";
+    this.syncBar.text = 'sync';
+    this.syncBar.color = 'yellow';
+    this.syncBar.tooltip = '远程数据源同步';
     this.syncBar.show();
 
     const diffs = this.control.manager.diffs;
 
-    this.allBar.text = "all";
+    this.allBar.text = 'all';
     this.allBar.color =
-      diffs.boDiffs.length || diffs.modDiffs.length ? "yellow" : "white";
-    this.allBar.tooltip = "更新本地所有";
+      diffs.boDiffs.length || diffs.modDiffs.length ? 'yellow' : 'white';
+    this.allBar.tooltip = '更新本地所有';
     this.allBar.show();
 
     this.modBar.text = `mod(${diffs.modDiffs.length})`;
-    this.modBar.color = diffs.modDiffs.length ? "yellow" : "white";
-    this.modBar.tooltip = "更新本地模块";
+    this.modBar.color = diffs.modDiffs.length ? 'yellow' : 'white';
+    this.modBar.tooltip = '更新本地模块';
     this.modBar.show();
 
     this.boBar.text = `bo(${diffs.boDiffs.length})`;
-    this.boBar.color = diffs.boDiffs.length ? "yellow" : "white";
-    this.boBar.tooltip = "更新本地基类";
+    this.boBar.color = diffs.boDiffs.length ? 'yellow' : 'white';
+    this.boBar.tooltip = '更新本地基类';
     this.boBar.show();
 
-    this.geBar.text = "generate";
-    this.geBar.color = "yellow";
-    this.geBar.tooltip = "重新生成本地代码";
+    this.geBar.text = 'generate';
+    this.geBar.color = 'yellow';
+    this.geBar.tooltip = '重新生成本地代码';
     this.geBar.show();
   }
 }
@@ -101,7 +99,7 @@ export class Control {
     }
     instance.ui.reRender();
 
-    showProgress("ready", instance.manager, async () => {
+    showProgress('ready', instance.manager, async () => {
       try {
         await instance.manager.ready();
       } catch (e) {
@@ -128,20 +126,20 @@ export class Control {
   manager: Manager;
   ui: UI;
   commands = {
-    switchOrigin: "pont.switchOrigin",
-    updateMod: "pont.updateMod",
-    updateBo: "pont.updateBo",
-    updateAll: "pont.updateAll",
-    syncRemote: "pont.syncRemote",
-    findInterface: "pont.findInterface",
-    regenerate: "pont.regenerate"
+    switchOrigin: 'pont.switchOrigin',
+    updateMod: 'pont.updateMod',
+    updateBo: 'pont.updateBo',
+    updateAll: 'pont.updateAll',
+    syncRemote: 'pont.syncRemote',
+    findInterface: 'pont.findInterface',
+    regenerate: 'pont.regenerate'
   };
   dispose: Function;
 
   watchLocalFile() {
     const config = this.manager.currConfig;
     const lockWatcher = vscode.workspace.createFileSystemWatcher(
-      path.join(config.outDir, "api.lock"),
+      path.join(config.outDir, 'api.lock'),
       true,
       false,
       true
@@ -235,16 +233,16 @@ export class Control {
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: ""
+            title: ''
           },
           async p => {
             this.manager.setReport(info => {
               p.report({ message: info });
             });
             try {
-            await this.manager.selectDataSource(item.label);
-            this.manager.calDiffs();
-            this.ui.reRender();
+              await this.manager.selectDataSource(item.label);
+              this.manager.calDiffs();
+              this.ui.reRender();
             } catch (e) {
               vscode.window.showErrorMessage(e.message);
             }
@@ -277,12 +275,12 @@ export class Control {
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: "updateMod"
+            title: 'updateMod'
           },
           p => {
             return new Promise(async (resolve, reject) => {
               try {
-                p.report({ message: "开始更新..." });
+                p.report({ message: '开始更新...' });
 
                 this.manager.makeSameMod(modName);
                 await this.manager.lock();
@@ -290,8 +288,8 @@ export class Control {
                 this.manager.calDiffs();
                 this.ui.reRender();
 
-                p.report({ message: "更新成功！" });
-                vscode.window.showInformationMessage(modName + "更新成功!");
+                p.report({ message: '更新成功！' });
+                vscode.window.showInformationMessage(modName + '更新成功!');
                 resolve();
               } catch (e) {
                 reject(e);
@@ -310,7 +308,7 @@ export class Control {
     const items = boDiffs.map(item => {
       return {
         label: item.name,
-        description: item.details.join(", ")
+        description: item.details.join(', ')
       } as vscode.QuickPickItem;
     });
 
@@ -325,12 +323,12 @@ export class Control {
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: "updateBo"
+            title: 'updateBo'
           },
           p => {
             return new Promise(async (resolve, reject) => {
               try {
-                p.report({ message: "开始更新..." });
+                p.report({ message: '开始更新...' });
 
                 this.manager.makeSameBase(boName);
                 await this.manager.lock();
@@ -338,8 +336,8 @@ export class Control {
                 this.manager.calDiffs();
                 this.ui.reRender();
 
-                p.report({ message: "更新成功！" });
-                vscode.window.showInformationMessage(boName + "更新成功!");
+                p.report({ message: '更新成功！' });
+                vscode.window.showInformationMessage(boName + '更新成功!');
                 resolve();
               } catch (e) {
                 reject(e);
@@ -353,7 +351,7 @@ export class Control {
   }
 
   updateAll() {
-    vscode.window.showInformationMessage("确定全量更新吗？", "确定").then(
+    vscode.window.showInformationMessage('确定全量更新吗？', '确定').then(
       text => {
         if (!text) {
           return;
@@ -362,12 +360,12 @@ export class Control {
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: "updateAll"
+            title: 'updateAll'
           },
           p => {
             return new Promise(async (resolve, reject) => {
               try {
-                p.report({ message: "开始更新..." });
+                p.report({ message: '开始更新...' });
 
                 this.manager.makeAllSame();
 
@@ -376,8 +374,8 @@ export class Control {
                 this.manager.calDiffs();
                 this.ui.reRender();
 
-                p.report({ message: "更新成功！" });
-                vscode.window.showInformationMessage("更新成功!");
+                p.report({ message: '更新成功！' });
+                vscode.window.showInformationMessage('更新成功!');
 
                 resolve();
               } catch (e) {
@@ -392,17 +390,17 @@ export class Control {
   }
 
   syncRemote() {
-    showProgress("syncRemote", this.manager, async report => {
-      report("远程更新中...");
+    showProgress('syncRemote', this.manager, async report => {
+      report('远程更新中...');
 
       try {
         await this.manager.readRemoteDataSource();
 
-        report("同步成功！");
-        report("差异比对中...");
+        report('同步成功！');
+        report('差异比对中...');
         this.manager.calDiffs();
 
-        report("同步完成！");
+        report('同步完成！');
         this.ui.reRender();
       } catch (e) {
         vscode.window.showErrorMessage(e.message);
@@ -413,14 +411,14 @@ export class Control {
   async regenerate() {
     const e = new events.EventEmitter();
 
-    showProgress("生成代码", this.manager, async report => {
-      report("代码生成中...");
+    showProgress('生成代码', this.manager, async report => {
+      report('代码生成中...');
       await wait(100);
 
       await this.manager.regenerateFiles();
 
-      report("代码生成成功！");
-      vscode.window.showInformationMessage("文件生成成功！");
+      report('代码生成成功！');
+      vscode.window.showInformationMessage('文件生成成功！');
     });
   }
 
