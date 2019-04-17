@@ -3,3 +3,4 @@ node_modules
 .vsix
 out
 yarn.lock
+yarn-error.log
