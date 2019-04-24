@@ -4,6 +4,8 @@
     "target": "es6",
     "outDir": "out",
     "lib": ["es6", "es7"],
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
     "sourceMap": true,
     "rootDir": "src"
   },

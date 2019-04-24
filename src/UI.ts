@@ -5,6 +5,7 @@ import * as path from 'path';
 import { wait, showProgress } from './utils';
 import * as events from 'events';
 import { syncNpm } from './utils';
+import { MocksServer } from './mocks';
 
 export class UI {
   private control: Control;
@@ -92,22 +93,21 @@ export class UI {
 export class Control {
   private static singleInstance: Control;
 
-  public static async initInstance(instance: Control, manager: Manager) {
-    instance.manager = manager;
-    if (!instance.ui) {
-      instance.ui = new UI(instance);
+  public async initInstance() {
+    if (!this.ui) {
+      this.ui = new UI(this);
     }
-    instance.ui.reRender();
+    this.ui.reRender();
 
-    showProgress('ready', instance.manager, async () => {
+    return showProgress('ready', this.manager, async () => {
       try {
-        await instance.manager.ready();
+        await this.manager.ready();
       } catch (e) {
         vscode.window.showErrorMessage(e.toString());
       }
-      instance.manager.calDiffs();
+      this.manager.calDiffs();
 
-      instance.ui.reRender();
+      this.ui.reRender();
     });
   }
 
@@ -116,8 +116,7 @@ export class Control {
       Control.singleInstance = new Control(manager);
     } else if (manager) {
       const instance = Control.singleInstance;
-
-      Control.initInstance(instance, manager);
+      instance.manager = manager;
     }
 
     return Control.singleInstance;
@@ -162,7 +161,7 @@ export class Control {
   constructor(manager: Manager) {
     this.createCommands();
 
-    Control.initInstance(this, manager);
+    this.manager = manager;
 
     this.watchLocalFile();
   }
@@ -247,6 +246,8 @@ export class Control {
               await this.manager.selectDataSource(item.label);
               this.manager.calDiffs();
               this.ui.reRender();
+
+              MocksServer.getSingleInstance(this.manager).checkMocksPath();
             } catch (e) {
               vscode.window.showErrorMessage(e.message);
             }

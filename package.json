@@ -18,13 +18,17 @@
     "jsonValidation": [
       {
         "fileMatch": "pont-config.json",
-        "url": "./configSchema.json"
+        "url": "./node_modules/pont-engine/configSchema.json"
       }
     ],
     "commands": [
       {
         "command": "pont.findInterface",
         "title": "find pont interface"
+      },
+      {
+        "command": "pont.jumpToMocks",
+        "title": "jump to mock position"
       }
     ],
     "keybindings": [
@@ -33,7 +37,15 @@
         "key": "cmd+ctrl+p",
         "mac": "cmd+ctrl+p"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "group": "navigation",
+          "command": "pont.jumpToMocks"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -52,7 +64,8 @@
     "vscode": "^1.1.18"
   },
   "dependencies": {
-    "pont-engine": "^0.1.67"
+    "pont-engine": "^0.1.67",
+    "fs-extra": "^7.0.1"
   },
   "repository": {
     "url": "git@github.com:nefe/vscode-pont.git",
