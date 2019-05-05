@@ -217,6 +217,8 @@ export class Control {
             builder.replace(editor.selection, code);
           }
         });
+
+        return code.split('.').filter(id => id);
       });
   }
 
