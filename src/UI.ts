@@ -177,7 +177,7 @@ export class Control {
     });
   }
 
-  findInterface() {
+  findInterface(ignoreEdit = false) {
     const items = this.manager.currLocalDataSource.mods
       .map(mod => {
         return mod.interfaces.map(inter => {
@@ -208,15 +208,17 @@ export class Control {
 
         const editor = vscode.window.activeTextEditor;
 
-        editor.edit(builder => {
-          if (editor.selection.isEmpty) {
-            const position = editor.selection.active;
+        if (!ignoreEdit) {
+          editor.edit(builder => {
+            if (editor.selection.isEmpty) {
+              const position = editor.selection.active;
 
-            builder.insert(position, code);
-          } else {
-            builder.replace(editor.selection, code);
-          }
-        });
+              builder.insert(position, code);
+            } else {
+              builder.replace(editor.selection, code);
+            }
+          });
+        }
 
         return code.split('.').filter(id => id);
       });
