@@ -190,7 +190,7 @@ export class Control {
       })
       .reduce((pre, next) => pre.concat(next), []);
 
-    vscode.window
+    return vscode.window
       .showQuickPick(items, {
         matchOnDescription: true,
         matchOnDetail: true
