@@ -1,5 +1,5 @@
 import { StandardDataSource, Interface, BaseClass, Manager } from 'pont-engine';
-import { StandardDataType, Property } from 'pont-engine';
+import { StandardDataType, Property, format } from 'pont-engine';
 import * as http from 'http';
 import * as fs from 'fs-extra';
 import * as path from 'path';
@@ -145,7 +145,19 @@ class Mocks {
 }
 
 export class MocksServer {
-  constructor(private manager: Manager) {}
+  constructor(private manager: Manager) {
+    const rootPath = vscode.workspace.rootPath;
+    const igonrePath = path.join(rootPath, '.gitignore');
+
+    let ignoreContent = fs.readFileSync(igonrePath, 'utf8');
+
+    if (ignoreContent.includes('.mocks')) {
+      return;
+    } else {
+      ignoreContent = ignoreContent + '\n' + '.mocks/';
+    }
+    fs.writeFileSync(igonrePath, ignoreContent);
+  }
 
   static singleInstance = null as MocksServer;
 
@@ -184,7 +196,10 @@ export class MocksServer {
     const wrapper = this.manager.currConfig.mocks.wrapper;
     const wrapperRes = data => wrapper.replace(/\{response\}/, data);
 
-    return new Mocks(this.manager.currLocalDataSource).getMocksCode(wrapperRes);
+    const code = new Mocks(this.manager.currLocalDataSource).getMocksCode(
+      wrapperRes
+    );
+    return format(code, this.manager.currConfig.prettierConfig);
   }
 
   async checkMocksPath() {
