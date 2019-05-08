@@ -5,9 +5,14 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as ts from 'typescript';
+const Mock = require('mockjs');
 
 const DEFAULT_ARR_LENGTH = 3;
 const DEFAULT_STRING = '我是字串';
+
+function useString(str: string) {
+  return `'${str}'`;
+}
 
 export function getArr(arrItem, arrLength = DEFAULT_ARR_LENGTH) {
   const arr = [];
@@ -26,27 +31,30 @@ class Mocks {
     return this.ds.baseClasses;
   }
 
-  getBaseClassDefaultValue(clazz: BaseClass, typeArgs: StandardDataType[]) {
-    const defaultValue = {};
-    const templateArgNames = (clazz.templateArgs || []).map(
-      arg => arg.typeName
-    );
+  getBaseClassMocksFn(clazz: BaseClass) {
+    const props = [] as string[];
 
     clazz.properties.forEach(prop => {
       let { name, dataType } = prop;
       const templateIndex = dataType.templateIndex;
 
       if (templateIndex !== -1) {
-        dataType = typeArgs[templateIndex];
+        props.push(`${name}: typeArgs[${templateIndex}]`);
+      } else {
+        props.push(`${name}: ${this.getDefaultMocks(prop.dataType)}`);
       }
-
-      defaultValue[name] = this.getDefaultMocks(prop.dataType);
     });
 
-    return defaultValue;
+    return `
+      ${clazz.name}: (...typeArgs) => {
+        return {
+          ${props.join(',\n')}
+        }
+      }
+    `;
   }
 
-  getDefaultMocks(response: StandardDataType) {
+  getDefaultMocks(response: StandardDataType): string {
     const {
       typeName,
       isDefsType,
@@ -59,55 +67,71 @@ class Mocks {
       const defClass = this.bases.find(bs => bs.name === typeName);
 
       if (!defClass) {
-        return {};
+        return '{}';
       }
 
-      return this.getBaseClassDefaultValue(defClass, typeArgs);
+      return `defs.${defClass.name}(${typeArgs
+        .map(arg => this.getDefaultMocks(arg))
+        .join(', ')})`;
     } else if (typeName === 'Array') {
       if (typeArgs.length) {
         const item = this.getDefaultMocks(typeArgs[0]);
-        return getArr(item);
+        return `[${getArr(item).join(',')}]`;
       }
-      return [];
+      return '[]';
     } else if (typeName === 'string') {
-      return DEFAULT_STRING;
+      return useString(DEFAULT_STRING);
     } else if (typeName === 'number') {
-      return Math.random() * 100;
+      return Math.random() * 100 + '';
     } else if (typeName === 'boolean') {
-      return true;
+      return 'true';
     } else {
-      return null;
+      return 'null';
     }
   }
 
-  getMocks() {
-    const mods = {};
-    this.ds.mods.forEach(mod => {
-      const modMocks = {};
-      mods[mod.name] = modMocks;
-
-      mod.interfaces.forEach(inter => {
-        const response = this.getDefaultMocks(inter.response);
-        modMocks[inter.name] = response;
-      });
+  getMocksCode(wrapper) {
+    const classes = this.ds.baseClasses.map(clazz => {
+      return this.getBaseClassMocksFn(clazz);
     });
 
-    return mods;
-  }
-
-  getMocksCode(wrapper) {
-    const mocksData = this.getMocks();
-
     return `
+    const defs = {
+      ${classes.join(',\n\n')}
+    }
+
+    const escapeDeadCycle = (fn, num = 30) => {
+      let n = 0;
+
+      return (...args) => {
+        if (n > num) return {};
+        n++;
+
+        const res = fn(...args);
+
+        return res;
+      };
+    };
+
+    Object.keys(defs).forEach(key => {
+      defs[key] = escapeDeadCycle(defs[key]);
+    });
+
       export default {
-      ${Object.keys(mocksData)
-        .map(modName => {
-          return `${modName}: {
-            ${Object.keys(mocksData[modName])
-              .map(interName => {
-                const interRes = mocksData[modName][interName];
+      ${this.ds.mods
+        .map(mod => {
+          const modName = mod.name;
+
+          return `
+          /** ${mod.description} */
+          ${modName}: {
+            ${mod.interfaces
+              .map(inter => {
+                const interName = inter.name;
+                const interRes = this.getDefaultMocks(inter.response);
 
                 return `
+                  /** ${inter.description} */
                   ${interName}: ${wrapper(interRes)}
                 `;
               })
@@ -134,87 +158,52 @@ export class MocksServer {
     return MocksServer.singleInstance;
   }
 
-  private async getMocksData() {
-    const dsName = this.manager.currConfig.name || 'root';
-    const mocksData = new Mocks(this.manager.currLocalDataSource).getMocks();
-
-    return {
-      [dsName]: mocksData
-    };
-  }
-
   async getCurrMocksData() {
+    await this.checkMocksPath();
     const rootPath = vscode.workspace.rootPath;
-    const mockPath = path.join(rootPath, '.mocks.ts');
-    const code = fs.readFileSync(mockPath, 'utf8');
-    const tempPath = path.join(rootPath, '.temp.js');
+    const mockPath = path.join(rootPath, '.mocks');
+    const sourcePath = path.join(mockPath, 'mocks.ts');
+    const noCacheFix = (Math.random() + '').slice(2, 5);
+    const jsPath = path.join(mockPath, `mocks.${noCacheFix}.js`);
+    const code = fs.readFileSync(sourcePath, 'utf8');
 
-    if (fs.existsSync(tempPath)) {
-      fs.unlinkSync(tempPath);
-    }
-
-    const jsResult = ts.transpileModule(code, {
+    const { outputText } = ts.transpileModule(code, {
       compilerOptions: {
         target: ts.ScriptTarget.ES2015,
         module: ts.ModuleKind.CommonJS
       }
-    }).outputText;
-    fs.writeFileSync(tempPath, jsResult);
-    const currMocksData = require(tempPath).mocksData;
-
-    if (fs.existsSync(tempPath)) {
-      fs.unlinkSync(tempPath);
-    }
+    });
+    fs.writeFileSync(jsPath, outputText);
+    const currMocksData = require(jsPath).default;
+    fs.unlinkSync(jsPath);
 
     return currMocksData;
   }
 
+  getMocksCode() {
+    const wrapper = this.manager.currConfig.mocks.wrapper;
+    const wrapperRes = data => wrapper.replace(/\{response\}/, data);
+
+    return new Mocks(this.manager.currLocalDataSource).getMocksCode(wrapperRes);
+  }
+
   async checkMocksPath() {
     const rootPath = vscode.workspace.rootPath;
-    const mockPath = path.join(rootPath, '.mocks.ts');
-    const dsName = this.manager.currConfig.name || 'root';
-    const mocksData = await this.getMocksData();
+    const mockPath = path.join(rootPath, '.mocks/mocks.ts');
 
     if (!fs.existsSync(mockPath)) {
-      await fs.writeFile(
-        mockPath,
-        'export const mocksData = ' + JSON.stringify(mocksData)
-      );
-    } else {
-      const currMocksData = await this.getCurrMocksData();
-
-      if (!currMocksData[dsName]) {
-        currMocksData[dsName] = mocksData[dsName];
+      const code = this.getMocksCode();
+      if (!fs.existsSync(path.join(rootPath, '.mocks'))) {
+        fs.mkdirSync(path.join(rootPath, '.mocks'));
       }
-
-      currMocksData[dsName] = Object.assign(
-        {},
-        mocksData[dsName],
-        currMocksData[dsName]
-      );
-
-      this.manager.currLocalDataSource.mods.forEach(mod => {
-        const modName = mod.name;
-
-        currMocksData[dsName][modName] = Object.assign(
-          {},
-          mocksData[dsName][modName],
-          currMocksData[dsName][modName]
-        );
-      });
-
-      await fs.writeFile(
-        mockPath,
-        'export const mocksData = ' + JSON.stringify(currMocksData, null, 2)
-      );
+      await fs.writeFile(mockPath, code);
+    } else {
+      // todo 补齐后端更新
     }
   }
 
   createServer() {
-    const rootPath = vscode.workspace.rootPath;
     const ds = this.manager.currLocalDataSource;
-    const dsName = this.manager.currConfig.name || 'root';
-    const wrapper = this.manager.currConfig.mocks.wrapper;
     const host = this.manager.currConfig.mocks.host;
 
     http
@@ -233,11 +222,8 @@ export class MocksServer {
               req.url.match(reg) &&
               req.method.toUpperCase() === inter.method.toUpperCase()
             ) {
-              const wrapperRes = wrapper.replace(
-                /\{response\}/,
-                JSON.stringify(
-                  mocksData[dsName || 'root'][mod.name][inter.name]
-                )
+              const wrapperRes = JSON.stringify(
+                Mock.mock(mocksData[mod.name][inter.name])
               );
               res.writeHead(200, {
                 'Content-Type': 'text/json'
