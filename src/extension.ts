@@ -51,8 +51,4 @@ export async function activate(context: vscode.ExtensionContext) {
 
   fileWatcher.onDidCreate(uri => createManager(uri.fsPath));
   fileWatcher.onDidChange(uri => createManager(uri.fsPath));
-
-  vscode.commands.registerCommand('jumpToMocks', (...args) => {
-    debugger;
-  });
 }
