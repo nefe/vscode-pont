@@ -54,7 +54,7 @@
   "dependencies": {
     "pont-engine": "^0.2.1"
   },
-  "icon": "https://camo.githubusercontent.com/eaed3e8b3ad4e00bcabb5b7f820da868fa3dd8fb/68747470733a2f2f696d672e616c6963646e2e636f6d2f7466732f54423163704c53477276704b31526a535a467158586358555658612d3732362d3339362e706e67",
+  "icon": "logo.png",
   "repository": {
     "url": "git@github.com:nefe/vscode-pont.git",
     "type": "git"
